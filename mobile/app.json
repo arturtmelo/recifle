@@ -1,0 +1,64 @@
+{
+  "expo": {
+    "name": "ReciCla",
+    "slug": "reclicla",
+    "scheme": "reclicla",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Usamos sua localização para mostrar anúncios e centros de reciclagem próximos de você.",
+        "NSCameraUsageDescription": "Usamos a câmera para você fotografar o material que deseja anunciar.",
+        "NSPhotoLibraryUsageDescription": "Usamos a galeria para você escolher fotos do material que deseja anunciar."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0F5C38",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": true,
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Usamos sua localização para mostrar anúncios e centros de reciclagem próximos de você."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Usamos a galeria para você escolher fotos do material que deseja anunciar.",
+          "cameraPermission": "Usamos a câmera para você fotografar o material que deseja anunciar."
+        }
+      ],
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 180,
+          "backgroundColor": "#0F5C38",
+          "dark": {
+            "backgroundColor": "#0E1712"
+          }
+        }
+      ],
+      "@react-native-community/datetimepicker"
+    ]
+  }
+}

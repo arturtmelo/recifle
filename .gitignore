@@ -1,0 +1,6 @@
+# SO / editor
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/*
+!.vscode/extensions.json
