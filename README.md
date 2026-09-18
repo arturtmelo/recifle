@@ -13,6 +13,9 @@ contraproposta, aceite) e feche o negócio, tudo dentro do app.
 ![License](https://img.shields.io/badge/license-MIT-green)
 [![CI](https://github.com/arturtmelo/recifle/actions/workflows/ci.yml/badge.svg)](https://github.com/arturtmelo/recifle/actions/workflows/ci.yml)
 
+**🚀 API ao vivo:** _[em deploy — link em breve]_ _(no plano free do Render, o primeiro request
+após um tempo sem uso pode levar ~30s enquanto o serviço "acorda")_
+
 ## Por que esse projeto
 
 Reciclagem no Brasil esbarra num problema de coordenação: quem tem material reciclável
@@ -52,23 +55,24 @@ fotos em tela cheia, painel administrativo web.
 | Navegação | React Navigation | Padrão de mercado, tipagem forte de rotas |
 | Estado servidor | TanStack Query | Cache, refetch automático, updates otimistas (ex.: favoritar) |
 | Backend | Express + TypeScript | API REST simples e previsível |
-| Banco | Prisma ORM sobre SQLite (dev) | Zero setup de infra local; troca de `provider` para Postgres em produção sem tocar no código |
+| Banco | Prisma ORM sobre PostgreSQL | Mesmo banco em dev (Docker) e produção (Render) — sem surpresa de compatibilidade entre ambientes |
 | Tempo real | Socket.io | Chat de negociação e notificações ao vivo |
 | Auth | JWT + bcrypt | Simples, sem dependência de serviço externo |
 | Mapa | WebView + Leaflet/OpenStreetMap | `react-native-maps` (Google Maps nativo) **não funciona no Expo Go** nas versões atuais do SDK — exige build nativo customizado. Resolvido com um mapa via WebView, sem chave de API e 100% funcional no fluxo de desenvolvimento via Expo Go |
 | Tema | Context API com paletas light/dark | Todo componente usa `useThemeColors()`; estilos são funções `createStyles(colors)` para recalcular sob demanda quando o tema muda |
 | Animações | Moti + Reanimated | Microinterações (transições de tela, feedback de ações, gráfico) |
+| Deploy | Render (Blueprint `render.yaml`) | Web service + Postgres provisionados como infraestrutura como código, a partir de um `git push` |
 
 ## Arquitetura
 
 ```
-Celular (Expo Go)                    Servidor (Node)
+Celular (Expo Go)                    Render (Web Service)
 ┌─────────────────────┐              ┌──────────────────────────┐
 │ React Native app     │  REST/JSON   │ Express API               │
 │  - TanStack Query ───┼─────────────▶│  - rotas /auth /listings   │
 │  - Socket.io client ─┼──WebSocket──▶│    /negotiations /deals    │
 │  - WebView (mapa)     │              │  - Socket.io (chat)        │
-└─────────────────────┘              │  - Prisma ORM ──▶ SQLite   │
+└─────────────────────┘              │  - Prisma ORM ──▶ Postgres │
                                       └──────────────────────────┘
 ```
 
@@ -93,11 +97,12 @@ reclicla/
 
 ```bash
 cd backend
+docker compose up -d      # sobe um Postgres local (porta 5433)
 npm install
 cp .env.example .env
-npx prisma migrate dev   # cria o banco SQLite local (dev.db)
-npm run seed              # popula com dados de demonstração
-npm run dev                # sobe a API em http://localhost:4000
+npx prisma migrate dev    # aplica as migrations no banco local
+npm run seed                # popula com dados de demonstração
+npm run dev                  # sobe a API em http://localhost:4000
 ```
 
 Contas de demonstração (senha para todas: `senha123`):
@@ -112,12 +117,15 @@ Contas de demonstração (senha para todas: `senha123`):
 
 ### 2. Mobile
 
-O celular físico não alcança `localhost` do seu PC — configure o IP local da máquina:
+O celular físico não alcança `localhost` do seu PC — configure o IP local da máquina (ou aponte
+direto para a API publicada no Render, sem precisar rodar o backend localmente):
 
 ```bash
 cd mobile
 cp .env.example .env
-# edite .env com o IP local do seu PC (descubra com `ipconfig` / `ifconfig`)
+# opção A: aponte para a API publicada (não precisa rodar o backend local)
+# EXPO_PUBLIC_API_URL=https://SEU-SERVICO.onrender.com  (veja o link no topo deste README)
+# opção B: backend local — use o IP da sua máquina (descubra com `ipconfig` / `ifconfig`)
 # EXPO_PUBLIC_API_URL=http://SEU_IP_LOCAL:4000
 
 npm install
@@ -136,6 +144,17 @@ restrições de rede local).
 4. Ao aceitar, o negócio é criado — agende a coleta, marque como coletado e depois concluído
 5. Avalie o negócio e veja as estatísticas de impacto e o gráfico atualizarem no perfil
 6. Favorite anúncios/centros, teste o filtro avançado e alterne entre tema claro/escuro/automático
+
+## Deploy
+
+O backend é publicado no [Render](https://render.com) a partir do `render.yaml` na raiz do
+repositório (Blueprint / infraestrutura como código): ao conectar o repositório e escolher
+"New Blueprint", o Render provisiona sozinho o web service e um banco Postgres, já conectados
+via variável de ambiente. A cada `git push` na branch `main`, o Render aplica as migrations
+pendentes (`prisma migrate deploy`) e reimplanta a API automaticamente.
+
+> O plano gratuito do Postgres no Render expira 30 dias após a criação (com 14 dias de carência
+> antes de apagar os dados) — ok para uma demo de portfólio, não para produção real.
 
 ## Screenshots
 

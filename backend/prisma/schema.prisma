@@ -3,12 +3,13 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// Papel do usuário no app. Modelado como String (validado na camada de aplicação)
-// em vez de enum nativo do Prisma, que não é bem suportado no conector SQLite.
+// Papel do usuário no app. Modelado como String (validado com Zod na camada de
+// aplicação) em vez de enum nativo do banco, para trocar/adicionar valores sem
+// depender de uma migration.
 // Valores possíveis: "POPULACAO" | "FORNECEDOR" | "CENTRO"
 model User {
   id               String   @id @default(cuid())
@@ -54,7 +55,8 @@ model CenterProfile {
   materials CenterMaterial[]
 }
 
-// Materiais aceitos por um centro (tabela de junção — evita arrays no SQLite)
+// Materiais aceitos por um centro (tabela de junção, em vez de array,
+// para manter a mesma modelagem independente do banco por trás do Prisma)
 // materialType usa os mesmos valores de Listing.materialType
 model CenterMaterial {
   id              String        @id @default(cuid())
