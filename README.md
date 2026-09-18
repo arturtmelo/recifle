@@ -13,8 +13,9 @@ contraproposta, aceite) e feche o negócio, tudo dentro do app.
 ![License](https://img.shields.io/badge/license-MIT-green)
 [![CI](https://github.com/arturtmelo/recifle/actions/workflows/ci.yml/badge.svg)](https://github.com/arturtmelo/recifle/actions/workflows/ci.yml)
 
-**🚀 API ao vivo:** _[em deploy — link em breve]_ _(no plano free do Render, o primeiro request
-após um tempo sem uso pode levar ~30s enquanto o serviço "acorda")_
+**🚀 API ao vivo:** [`https://reclicla-api.onrender.com`](https://reclicla-api.onrender.com/health)
+_(no plano free do Render, o primeiro request após um tempo sem uso pode levar ~30s enquanto o
+serviço "acorda")_
 
 ## Por que esse projeto
 
@@ -124,7 +125,7 @@ direto para a API publicada no Render, sem precisar rodar o backend localmente):
 cd mobile
 cp .env.example .env
 # opção A: aponte para a API publicada (não precisa rodar o backend local)
-# EXPO_PUBLIC_API_URL=https://SEU-SERVICO.onrender.com  (veja o link no topo deste README)
+# EXPO_PUBLIC_API_URL=https://reclicla-api.onrender.com
 # opção B: backend local — use o IP da sua máquina (descubra com `ipconfig` / `ifconfig`)
 # EXPO_PUBLIC_API_URL=http://SEU_IP_LOCAL:4000
 
