@@ -1,0 +1,210 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Papel do usuário no app. Modelado como String (validado na camada de aplicação)
+// em vez de enum nativo do Prisma, que não é bem suportado no conector SQLite.
+// Valores possíveis: "POPULACAO" | "FORNECEDOR" | "CENTRO"
+model User {
+  id               String   @id @default(cuid())
+  name             String
+  email            String   @unique
+  passwordHash     String
+  phone            String?
+  role             String
+  avatarUrl        String?
+  bio              String?
+  addressText      String?
+  lat              Float?
+  lng              Float?
+  totalKgRecycled  Float    @default(0)
+  dealsCompleted   Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  centerProfile      CenterProfile?
+  listings            Listing[]      @relation("ListingOwner")
+  negotiationsAsSeller Negotiation[] @relation("NegotiationSeller")
+  negotiationsAsBuyer  Negotiation[] @relation("NegotiationBuyer")
+  offers              Offer[]
+  messages            Message[]
+  dealsAsSeller       Deal[]         @relation("DealSeller")
+  dealsAsBuyer        Deal[]         @relation("DealBuyer")
+  reviewsGiven        Review[]       @relation("ReviewFrom")
+  reviewsReceived     Review[]       @relation("ReviewTo")
+  notifications       Notification[]
+  favorites           Favorite[]
+}
+
+// Perfil estendido para usuários com role = CENTRO
+model CenterProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  description String?
+  openingHours String?
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  materials CenterMaterial[]
+}
+
+// Materiais aceitos por um centro (tabela de junção — evita arrays no SQLite)
+// materialType usa os mesmos valores de Listing.materialType
+model CenterMaterial {
+  id              String        @id @default(cuid())
+  centerProfileId String
+  centerProfile   CenterProfile @relation(fields: [centerProfileId], references: [id], onDelete: Cascade)
+  materialType    String
+
+  @@unique([centerProfileId, materialType])
+}
+
+// Anúncio de material reciclável.
+// materialType: "PLASTICO" | "PAPEL" | "VIDRO" | "METAL" | "ELETRONICO" | "OLEO" | "ORGANICO" | "OUTROS"
+// status: "DISPONIVEL" | "EM_NEGOCIACAO" | "FECHADO" | "CANCELADO"
+// priceType: "DOACAO" | "VENDA"
+model Listing {
+  id           String   @id @default(cuid())
+  ownerId      String
+  owner        User     @relation("ListingOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  materialType String
+  title        String
+  description  String?
+  quantityKg   Float
+  status       String   @default("DISPONIVEL")
+  priceType    String   @default("DOACAO")
+  pricePerKg   Float?
+  addressText  String?
+  lat          Float?
+  lng          Float?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  photos       Photo[]
+  negotiations Negotiation[]
+  deals        Deal[]
+}
+
+model Photo {
+  id        String   @id @default(cuid())
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  url       String
+  createdAt DateTime @default(now())
+}
+
+// Uma negociação por par (anúncio, comprador).
+// status: "ABERTA" | "ACEITA" | "RECUSADA" | "CANCELADA"
+model Negotiation {
+  id        String   @id @default(cuid())
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  sellerId  String
+  seller    User     @relation("NegotiationSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+  buyerId   String
+  buyer     User     @relation("NegotiationBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+  status    String   @default("ABERTA")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  offers   Offer[]
+  messages Message[]
+  deal     Deal?
+
+  @@unique([listingId, buyerId])
+}
+
+// Cada proposta/contraproposta/aceite/recusa dentro de uma negociação.
+// type: "PROPOSTA" | "CONTRA" | "ACEITE" | "RECUSA"
+model Offer {
+  id             String      @id @default(cuid())
+  negotiationId  String
+  negotiation    Negotiation @relation(fields: [negotiationId], references: [id], onDelete: Cascade)
+  authorId       String
+  author         User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  type           String
+  pricePerKg     Float?
+  quantityKg     Float
+  message        String?
+  createdAt      DateTime    @default(now())
+}
+
+model Message {
+  id            String      @id @default(cuid())
+  negotiationId String
+  negotiation   Negotiation @relation(fields: [negotiationId], references: [id], onDelete: Cascade)
+  senderId      String
+  sender        User        @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  text          String
+  createdAt     DateTime    @default(now())
+  readAt        DateTime?
+}
+
+// Negócio fechado a partir de uma negociação aceita.
+// status: "CONFIRMADO" | "COLETA_AGENDADA" | "COLETADO" | "CONCLUIDO" | "CANCELADO"
+model Deal {
+  id               String      @id @default(cuid())
+  negotiationId    String      @unique
+  negotiation      Negotiation @relation(fields: [negotiationId], references: [id], onDelete: Cascade)
+  listingId        String
+  listing          Listing     @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  sellerId         String
+  seller           User        @relation("DealSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+  buyerId          String
+  buyer            User        @relation("DealBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+  finalPricePerKg  Float?
+  finalQuantityKg  Float
+  status           String      @default("CONFIRMADO")
+  scheduledAt      DateTime?
+  completedAt      DateTime?
+  createdAt        DateTime    @default(now())
+
+  reviews Review[]
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  dealId     String
+  deal       Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  fromUserId String
+  fromUser   User     @relation("ReviewFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUserId   String
+  toUser     User     @relation("ReviewTo", fields: [toUserId], references: [id], onDelete: Cascade)
+  rating     Int
+  comment    String?
+  createdAt  DateTime @default(now())
+
+  @@unique([dealId, fromUserId])
+}
+
+// type: "NOVA_PROPOSTA" | "CONTRA_PROPOSTA" | "PROPOSTA_ACEITA" | "PROPOSTA_RECUSADA"
+//     | "NOVA_MENSAGEM" | "NEGOCIO_ATUALIZADO" | "NOVA_AVALIACAO"
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  body      String
+  data      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+// targetType: "LISTING" | "CENTRO"
+model Favorite {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetType String
+  targetId   String
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, targetType, targetId])
+}
