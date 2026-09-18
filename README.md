@@ -11,6 +11,7 @@ contraproposta, aceite) e feche o negócio, tudo dentro do app.
 ![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?logo=prisma&logoColor=white)
 ![Socket.io](https://img.shields.io/badge/Socket.io-realtime-010101?logo=socketdotio&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green)
+[![CI](https://github.com/arturtmelo/recifle/actions/workflows/ci.yml/badge.svg)](https://github.com/arturtmelo/recifle/actions/workflows/ci.yml)
 
 ## Por que esse projeto
 
